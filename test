@@ -1,0 +1,14 @@
+# @app.callback(Output('ocr-export-output', 'children'),
+#               [Input('submit-button', 'n_clicks')],
+#               [State('upload-image', 'filename')]
+#               )
+# def ocr_export(n_clicks, filename):
+#     if filename[0]:
+#         for pdf_or_html in ['pdf','html']:
+#             pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(filename), extension=pdf_or_html)
+#             filepath = "output/ocr_output." + pdf_or_html
+#             f = open(filepath, "w+b")
+#             f.write(bytearray(pdf_or_html_output))
+#             f.close()
+#
+#     return html.A(filepath)
