@@ -8,6 +8,7 @@ import base64
 import io
 import pytesseract
 from PIL import Image
+import urllib
 
 from TesseractOCR import show_ocr
 
@@ -37,12 +38,12 @@ app.layout = html.Div([
     ),
     html.Div([
         html.Div([
-            html.Div(id='output-image-upload'),
+            dcc.Loading(id="loading-1", children=[html.Div(id='output-image-upload')], type='circle'),
             html.Button(id='submit-button', n_clicks=0, children='Submit')
         ], className="col-6"),
         html.Div([
-            html.Div(id='ocr-conversion-output'),
-            html.Div(id='ocr-export-output')
+            dcc.Loading(id="loading-2", children=[html.Div(id='ocr-conversion-output')], type='circle'),
+            dcc.Loading(id ="loading-3", children=[html.Div(id='ocr-export-output')],type="circle")
             # html.Button(id='export-pdf-button', n_clicks=0, children='Export PDF'),
             # html.Button(id='export-html-button', n_clicks=0, children='Export HTML')
         ], className="col-6"),
@@ -97,11 +98,43 @@ def ocr_conversion(n_clicks, contents):
 
 @app.callback(Output('ocr-export-output', 'children'),
               [Input('submit-button', 'n_clicks')],
-              [State('upload-image', 'filename')]
+              [State('upload-image', 'contents')]
               )
-def ocr_export(n_clicks, filename):
-    return html.A('HHHHHHHHHHHHH', className='btn btn-primary',href='file:///C:/Users/wenluyang/Documents/projet/DemoOCR/image/Louis.png')
-    # #return 'n_clicks'
+def ocr_export(n_clicks, contents):
+    # pdf_or_html = 'html'
+    # pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(filename[0]), extension=pdf_or_html)
+    # filepath = "image/ocr_output." + pdf_or_html
+    # f = open(filepath, "w+b")
+    # f.write(bytearray(pdf_or_html_output))
+    # return html.A('Export PDF', id='exportPDF', className='btn btn-primary', href="image/ocr_output.html", target="_blank", download="rawdata.pdf",)
+    try:
+        msg = base64.b64decode(contents[0].split(',')[1])
+        buf = io.BytesIO(msg)
+        export_btns = []
+        for pdf_or_html in ['pdf','hocr']:
+            pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(buf), extension=pdf_or_html)
+            if pdf_or_html=='pdf':
+                btnname = 'Export PDF'
+                fn = "ocr_output.pdf"
+                filepath = "static/"+ fn
+                f = open(filepath, "w+b")
+                f.write(bytearray(pdf_or_html_output))
+            else:
+                btnname = 'Export HTML'
+                fn = "ocr_output.html"
+                filepath = "static/" +fn
+                f = open(filepath, "w+b")
+                f.write(pdf_or_html_output)
+            f.close()
+            export_btn = html.A(btnname, href=filepath, target="_blank", download=fn, className="btn btn-primary")#('n_clicks {}'.format(n_clicks))
+            export_btns.append(export_btn)
+    except TypeError:
+        export_btns = html.A('')
+    return export_btns
+
+    #return html.A('Export PDF', href="static/ocr_output.pdf", target="_blank", download="rawdata.pdf")#('n_clicks {}'.format(n_clicks))
+
+
     # export_buttons = []
     # try:
     #     for pdf_or_html in ['pdf','html']:
@@ -116,7 +149,10 @@ def ocr_export(n_clicks, filename):
     #     export_buttons = []
     #     pass
 
-
+@app.server.route('/static/<path:path>')
+def static_file(path):
+    static_folder = os.path.join(os.getcwd(), 'static')
+    return send_from_directory(static_folder, path)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
