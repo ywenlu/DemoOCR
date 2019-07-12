@@ -4,7 +4,8 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
-
+import base64
+import io
 import pytesseract
 from PIL import Image
 
@@ -82,11 +83,13 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
 
 @app.callback(Output('ocr-conversion-output', 'children'),
               [Input('submit-button', 'n_clicks')],
-              [State('upload-image', 'filename')]
+              [State('upload-image', 'contents')]
               )
-def ocr_conversion(n_clicks, filename):
+def ocr_conversion(n_clicks, contents):
     try:
-        transcript = pytesseract.image_to_string(Image.open(filename[0]))
+        msg = base64.b64decode(contents[0].split(',')[1])
+        buf = io.BytesIO(msg)
+        transcript = pytesseract.image_to_string(Image.open(buf))
     except:
         transcript = "Please upload a file"
     return transcript
