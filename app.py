@@ -24,10 +24,10 @@ app.layout = html.Div([
             html.A('Select Files')
         ]),
         style={
-            'width': '100%',
+            'width': '90%',
             'height': '60px',
             'lineHeight': '60px',
-            'borderWidth': '1px',
+            'borderWidth': '2px',
             'borderStyle': 'dashed',
             'borderRadius': '5px',
             'textAlign': 'center',
@@ -36,14 +36,25 @@ app.layout = html.Div([
         # Allow multiple files to be uploaded
         multiple=True
     ),
+
+    html.Div([
+        html.Button(id='submit-button', n_clicks=0, children='Submit', className="col-2"),
+    ], className="row"),
+
     html.Div([
         html.Div([
-            dcc.Loading(id="loading-1", children=[html.Div(id='output-image-upload')], type='circle'),
-            html.Button(id='submit-button', n_clicks=0, children='Submit')
+            dcc.Loading(id="loading-1", children=[
+                html.Div(id='output-image-upload', style={'width': '100%'})
+            ], type='circle'),
+
         ], className="col-6"),
         html.Div([
-            dcc.Loading(id="loading-2", children=[html.Div(id='ocr-conversion-output')], type='circle'),
-            dcc.Loading(id ="loading-3", children=[html.Div(id='ocr-export-output')],type="circle")
+            dcc.Loading(id="loading-2", children=[
+                html.Div(id='ocr-conversion-output', style={'width': '100%'})
+            ], type='circle'),
+            dcc.Loading(id ="loading-3", children=[
+                html.Div(id='ocr-export-output', style={'width': '100%'})
+            ],type="circle"),
             # html.Button(id='export-pdf-button', n_clicks=0, children='Export PDF'),
             # html.Button(id='export-html-button', n_clicks=0, children='Export HTML')
         ], className="col-6"),
@@ -60,7 +71,7 @@ def parse_contents(contents, filename, date):
 
         # HTML images accept base64 encoded strings in the same format
         # that is supplied by the upload
-        html.Img(src=contents),
+        html.Img(src=contents, style={'width': '100%'}),
         html.Hr(),
         html.Div('Raw Content'),
         html.Pre(contents[0:200] + '...', style={
@@ -126,7 +137,8 @@ def ocr_export(n_clicks, contents):
                 f = open(filepath, "w+b")
                 f.write(pdf_or_html_output)
             f.close()
-            export_btn = html.A(btnname, href=filepath, target="_blank", download=fn, className="btn btn-primary")#('n_clicks {}'.format(n_clicks))
+            export_btn = html.A(btnname, href=filepath, target="_blank",
+                       download=fn, className="btn btn-primary", style={'width': '90%'})
             export_btns.append(export_btn)
     except TypeError:
         export_btns = html.A('')
