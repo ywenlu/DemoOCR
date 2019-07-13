@@ -1,54 +1,25 @@
 import datetime
-#import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
-
+import base64
+import io
 import pytesseract
 from PIL import Image
-import io
-from io import BytesIO, StringIO
 import urllib
-
-import base64
-from IPython import display
 import os
-import cv2
-from luminoth import Detector, read_image, vis_objects
+import flask
+
 from TesseractOCR import show_ocr
-
-
-def fig_to_uri(in_fig, close_all=True, **save_args):
-    # type: (plt.Figure) -> str
-    """
-    Save a figure as a URI
-    :param in_fig:
-    :return:
-    """
-    out_img = BytesIO()
-    in_fig.savefig(out_img, format='png', **save_args)
-    if close_all:
-        in_fig.clf()
-        plt.close('all')
-    out_img.seek(0)  # rewind file
-    encoded = base64.b64encode(out_img.read()).decode("ascii").replace("\n", "")
-    return "data:image/png;base64,{}".format(encoded)
-
-# Creat checkpoint
-#detector = Detector(checkpoint='b4193ef66713')
-
-
 
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
+    html.H1("OCR Demo", className="text-white bg-dark"),
     dcc.Upload(
         id='upload-image',
         children=html.Div([
@@ -70,20 +41,19 @@ app.layout = html.Div([
     ),
 
     html.Div([
-        html.Button(id='submit-button', n_clicks=0, children='Submit', className="btn btn-secondary",
-                    style={'width': '100%', 'marginLeft': 10, 'marginRight': 10, 'marginTop': 10, 'marginBottom': 10}),
-    ], className="col-2"),
+        html.Button(id='submit-button', n_clicks=0, children='Submit', className="col-2"),
+    ], className="row"),
 
     html.Div([
         html.Div([
             dcc.Loading(id="loading-1", children=[
                 html.Div(id='output-image-upload', style={'width': '100%'})
             ], type='circle'),
-        ], className="col-6"),
 
+        ], className="col-6"),
         html.Div([
             dcc.Loading(id="loading-2", children=[
-                html.Div(id='ocr-conversion-output', style={'width': '90%'})
+                html.Div(id='ocr-conversion-output', style={'width': '100%'})
             ], type='circle'),
             dcc.Loading(id ="loading-3", children=[
                 html.Div(id='ocr-export-output', style={'width': '100%'})
@@ -91,7 +61,6 @@ app.layout = html.Div([
             # html.Button(id='export-pdf-button', n_clicks=0, children='Export PDF'),
             # html.Button(id='export-html-button', n_clicks=0, children='Export HTML')
         ], className="col-6"),
-
     ], className="row"),
 
 
@@ -136,7 +105,7 @@ def ocr_conversion(n_clicks, contents):
         msg = base64.b64decode(contents[0].split(',')[1])
         buf = io.BytesIO(msg)
         transcript = pytesseract.image_to_string(Image.open(buf))
-    except:
+    except TypeError:
         transcript = "Please upload a file"
     return transcript
 
@@ -146,12 +115,6 @@ def ocr_conversion(n_clicks, contents):
               [State('upload-image', 'contents')]
               )
 def ocr_export(n_clicks, contents):
-    # pdf_or_html = 'html'
-    # pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(filename[0]), extension=pdf_or_html)
-    # filepath = "image/ocr_output." + pdf_or_html
-    # f = open(filepath, "w+b")
-    # f.write(bytearray(pdf_or_html_output))
-    # return html.A('Export PDF', id='exportPDF', className='btn btn-primary', href="image/ocr_output.html", target="_blank", download="rawdata.pdf",)
     try:
         msg = base64.b64decode(contents[0].split(',')[1])
         buf = io.BytesIO(msg)
@@ -172,34 +135,17 @@ def ocr_export(n_clicks, contents):
                 f.write(pdf_or_html_output)
             f.close()
             export_btn = html.A(btnname, href=filepath, target="_blank",
-                                download=fn, className="btn btn-primary",
-                                style={'width': '90%', 'marginTop': 10, 'marginBottom': 10})
+                       download=fn, className="btn btn-primary", style={'width': '95%'})
             export_btns.append(export_btn)
     except TypeError:
         export_btns = html.A('')
     return export_btns
 
-    #return html.A('Export PDF', href="static/ocr_output.pdf", target="_blank", download="rawdata.pdf")#('n_clicks {}'.format(n_clicks))
-
-
-    # export_buttons = []
-    # try:
-    #     for pdf_or_html in ['pdf','html']:
-    #         pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(filename[0]), extension=pdf_or_html)
-    #         filepath = "image/ocr_output." + pdf_or_html
-    #         export_buttons.append(filepath)
-    #         f = open(filepath, "w+b")
-    #         f.write(bytearray(pdf_or_html_output))
-    #         f.close()
-    #     return html.Div(html.A('hello',color='blue'))  #export_buttons[0]
-    # except:
-    #     export_buttons = []
-    #     pass
 
 @app.server.route('/static/<path:path>')
 def static_file(path):
     static_folder = os.path.join(os.getcwd(), 'static')
-    return send_from_directory(static_folder, path)
+    return flask.send_from_directory(static_folder, path)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
