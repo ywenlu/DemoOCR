@@ -21,7 +21,8 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div([
 
     html.Div(
-        [   html.H1("OCR Demo", className="row text-white bg-dark", style={'height':'5vh', 'margin':'10px'}),
+
+        [   html.Div(html.H1("OCR Demo", style={'margin':'10px'}), className="row text-white bg-dark", style={'height':'10vh'}),
             dcc.Upload(
                 id='upload-image',
                 children=html.Div([
@@ -29,14 +30,14 @@ app.layout = html.Div([
                     html.A('Select Files')
                 ]),
                 style={
-                    #'width': '100%',
+                    'width': '100%',
                     'height': '5vh',
                     'lineHeight': '60px',
                     'borderWidth': '2px',
                     'borderStyle': 'dashed',
                     'borderRadius': '5px',
                     'textAlign': 'center',
-                    #'margin': '10px'
+                    'margin': '10px'
                 },
                 # Allow multiple files to be uploaded
                 multiple=True),
@@ -44,16 +45,17 @@ app.layout = html.Div([
             html.Div([
                 html.Div([
                     dcc.Loading(id="loading-1", children=[
-                        html.Div(id='output-image-upload')
+                        html.Div(id='output-image-upload', style={'height':'70vh', 'overflow': 'scroll'})
                     ], type='circle'),
                 ], className="col-6 border px-1"),
 
                 html.Div([
                     dcc.Loading(id="loading-2", children=[
-                        html.Div(id='ocr-conversion-output')
+                        html.Iframe(id='ocr-conversion-output', src='static/blank.html',
+                                    className="col-12", style={'height':'70vh','borderWidth': '0px'})
                     ], type='circle'),
                 ], className="col-6 border px-1"),
-            ], className="row h-90", style={'height':'80vh'}),
+            ], className="row h-90", style={'height':'70vh'}),
 
             html.Div(
                 [
@@ -75,7 +77,7 @@ app.layout = html.Div([
                 className='row h-10', style={'height': '10vh', 'margin':'10px'}
             )
 
-        ], className="container-fluid", style={'height': '90vh', 'margin':'10px'})
+        ], className="container-fluid", style={'height': '80vh', 'margin':'10px'})
         ]
     )
 
@@ -110,50 +112,54 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         return children
 
 
-@app.callback(Output('ocr-conversion-output', 'children'),
-              [Input('submit-button', 'n_clicks')],
-              [State('upload-image', 'contents')]
-              )
-def ocr_conversion(n_clicks, contents):
-    try:
-        msg = base64.b64decode(contents[0].split(',')[1])
-        buf = io.BytesIO(msg)
-        transcript = pytesseract.image_to_string(Image.open(buf))
-    except TypeError:
-        transcript = "Please upload a file"
-    return transcript
+# @app.callback(Output('ocr-conversion-output', 'children'),
+#               [Input('submit-button', 'n_clicks')],
+#               [State('upload-image', 'contents')]
+#               )
+# def ocr_conversion(n_clicks, contents):
+#     try:
+#         msg = base64.b64decode(contents[0].split(',')[1])
+#         buf = io.BytesIO(msg)
+#         transcript = pytesseract.image_to_string(Image.open(buf))
+#     except TypeError:
+#         transcript = "Please upload a file"
+#     return transcript
 
 
-@app.callback(Output('ocr-export-output', 'children'),
+@app.callback([Output('ocr-export-output', 'children'),
+              Output('ocr-conversion-output', 'src')],
               [Input('submit-button', 'n_clicks')],
               [State('upload-image', 'contents')]
               )
 def ocr_export(n_clicks, contents):
+    output = {}
     try:
         msg = base64.b64decode(contents[0].split(',')[1])
         buf = io.BytesIO(msg)
         export_btns = []
         for pdf_or_html in ['pdf','hocr']:
-            pdf_or_html_output = pytesseract.image_to_pdf_or_hocr(Image.open(buf), extension=pdf_or_html)
+            output[pdf_or_html] = pytesseract.image_to_pdf_or_hocr(Image.open(buf), extension=pdf_or_html)
             if pdf_or_html=='pdf':
                 btnname = 'Export PDF'
                 fn = "ocr_output.pdf"
                 filepath = "static/"+ fn
                 f = open(filepath, "w+b")
-                f.write(bytearray(pdf_or_html_output))
+                f.write(bytearray(output[pdf_or_html]))
             else:
                 btnname = 'Export HTML'
                 fn = "ocr_output.html"
                 filepath = "static/" +fn
                 f = open(filepath, "w+b")
-                f.write(pdf_or_html_output)
+                f.write(output[pdf_or_html])
             f.close()
             export_btn = html.A(btnname, href=filepath, target="_blank",
                                 download=fn, className="btn btn-primary col-4", style={'margin':'10px', 'marginLeft':'20px', 'marginRight':'20px'})
             export_btns.append(export_btn)
+        src = 'static/ocr_output.html'
     except TypeError:
         export_btns = html.A('')
-    return export_btns
+        src = 'static/blank.html'
+    return export_btns, src
 
 
 @app.server.route('/static/<path:path>')
