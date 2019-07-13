@@ -19,52 +19,66 @@ external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
-    html.H1("OCR Demo", className="text-white bg-dark"),
-    dcc.Upload(
-        id='upload-image',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '95%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '2px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
 
-    html.Div([
-        html.Button(id='submit-button', n_clicks=0, children='Submit', className="col-2"),
-    ], className="row"),
+    html.Div(
+        [   html.H1("OCR Demo", className="row text-white bg-dark", style={'height':'5vh', 'margin':'10px'}),
+            dcc.Upload(
+                id='upload-image',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                style={
+                    #'width': '100%',
+                    'height': '5vh',
+                    'lineHeight': '60px',
+                    'borderWidth': '2px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    #'margin': '10px'
+                },
+                # Allow multiple files to be uploaded
+                multiple=True),
 
-    html.Div([
-        html.Div([
-            dcc.Loading(id="loading-1", children=[
-                html.Div(id='output-image-upload', style={'width': '100%'})
-            ], type='circle'),
+            html.Div([
+                html.Div([
+                    dcc.Loading(id="loading-1", children=[
+                        html.Div(id='output-image-upload')
+                    ], type='circle'),
+                ], className="col-6 border px-1"),
 
-        ], className="col-6"),
-        html.Div([
-            dcc.Loading(id="loading-2", children=[
-                html.Div(id='ocr-conversion-output', style={'width': '100%'})
-            ], type='circle'),
-            dcc.Loading(id ="loading-3", children=[
-                html.Div(id='ocr-export-output', style={'width': '100%'})
-            ],type="circle"),
-            # html.Button(id='export-pdf-button', n_clicks=0, children='Export PDF'),
-            # html.Button(id='export-html-button', n_clicks=0, children='Export HTML')
-        ], className="col-6"),
-    ], className="row"),
+                html.Div([
+                    dcc.Loading(id="loading-2", children=[
+                        html.Div(id='ocr-conversion-output')
+                    ], type='circle'),
+                ], className="col-6 border px-1"),
+            ], className="row h-90", style={'height':'80vh'}),
+
+            html.Div(
+                [
+                    html.Div([
+                        html.Button(id='submit-button', n_clicks=0, children='Submit', className="btn btn-secondary col-6",
+                                    style={'width': '100%', 'margin': '10px'})],
+                        className="col-6"),
+
+                    html.Div([
+                        dcc.Loading(id="loading-3", children=[
+                                html.Div(id='ocr-export-output', style={'width': '100%'}, className='row')
+                            ], type="circle")
+                        ],
+                        className='col-6'
+                    )
 
 
-    ])
+                ],
+                className='row h-10', style={'height': '10vh', 'margin':'10px'}
+            )
+
+        ], className="container-fluid", style={'height': '90vh', 'margin':'10px'})
+        ]
+    )
+
 
 
 def parse_contents(contents, filename, date):
@@ -135,7 +149,7 @@ def ocr_export(n_clicks, contents):
                 f.write(pdf_or_html_output)
             f.close()
             export_btn = html.A(btnname, href=filepath, target="_blank",
-                       download=fn, className="btn btn-primary", style={'width': '95%'})
+                                download=fn, className="btn btn-primary col-4", style={'margin':'10px', 'marginLeft':'20px', 'marginRight':'20px'})
             export_btns.append(export_btn)
     except TypeError:
         export_btns = html.A('')
